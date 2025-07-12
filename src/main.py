@@ -64,9 +64,6 @@ def get_image(keyword: str):
         logger.info(f"Found cached image URL for '{normalized}'")
         image_url = cached_url
     else:
-        global image_fetcher
-        if image_fetcher is None:
-            image_fetcher = ImageFetcher(settings.API_KEY, settings.CSE_ID)
         image_url = image_fetcher.fetch_image_url(normalized)
         if image_url:
             if db.save_image_url(normalized, image_url):
