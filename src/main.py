@@ -83,4 +83,4 @@ def get_image(keyword: str):
     logger.info(f"Image URL: {image_url}")
     if not image_url:
         raise HTTPException(status_code=404, detail="No image found for keyword")
-    return ImageResponse(keyword=keyword, image_url=image_url)
+    return ImageResponse(keyword=normalized, image_url=image_url)
