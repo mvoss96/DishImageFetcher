@@ -6,30 +6,30 @@ This project provides a FastAPI-based backend to fetch and cache image URLs for 
 - Caches image URLs in a local database
 - Fetches images using Google Custom Search API
 
+## Dev Container
+This project includes a `devcontainer.json` for easy setup in VS Code or compatible environments. The container installs all dependencies automatically and provides a ready-to-use Python development environment.
+
 ## Requirements
-- Python 3.10+
 - API key and CSE ID for Google Custom Search (set in `.env`)
 
-## Installation
-```bash
-pip install -r requirements.txt
-```
-
-## Configuration
-Copy `.env.example` to `.env` and fill in your credentials:
-```bash
-cp .env.example .env
-# Then edit .env and set your API_KEY and CSE_ID
-```
-
-Example content:
+## Setup
+Copy `.env.example` to `.env` and set your API credentials:
+Example `.env` content:
 ```
 API_KEY=your_google_api_key
 CSE_ID=your_custom_search_engine_id
 ```
 
-## Dev Container
-This project includes a `devcontainer.json` for easy setup in VS Code or compatible environments. The container installs all dependencies automatically and provides a ready-to-use Python development environment.
+### Option 1: Dev Container (Recommended)
+If you use VS Code or a compatible editor, simply open the project in a dev container. All dependencies are installed automatically and you get a ready-to-use Python development environment.
+
+### Option 2: Manual Setup
+If you do not use a dev container, follow these steps:
+1. Install Python 3.10+
+2. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
 
 ## Development
 Run the FastAPI server in development mode:
