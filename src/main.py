@@ -1,6 +1,7 @@
 import logging
 
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, ValidationError, Field
 from typing import Optional
 from pydantic_settings import BaseSettings
@@ -31,23 +32,11 @@ class ImageResponse(BaseModel):
 
 
 # App
-try:
-    settings = Settings()
-except ValidationError as e:
-    raise RuntimeError(f"Config Error: {e}")
-
+settings = Settings()
 logger = init_logging()
 db = ImageCacheDB(settings.DB_PATH)
-
-# Enable CORS (all origins allowed, for demo purposes)
-from fastapi.middleware.cors import CORSMiddleware
-
 app = FastAPI()
-
-# Initialize ImageFetcher only once
-image_fetcher = None
-if settings.API_KEY and settings.CSE_ID:
-    image_fetcher = ImageFetcher(settings.API_KEY, settings.CSE_ID)
+image_fetcher = ImageFetcher(settings.API_KEY, settings.CSE_ID)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -55,7 +44,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 
 @app.get("/image", response_model=ImageResponse)
 def get_image(keyword: str):
