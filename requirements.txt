@@ -1,2 +1,4 @@
 google-images-search
 python-dotenv
+fastapi[standard]
+pydantic
