@@ -8,12 +8,15 @@ logger = logging.getLogger("image_fetcher")
 
 class ImageFetcher:
     """Class to handle Google Images search."""
-    
-    def __init__(self, api_key: str, cse_id: str):
+
+    api_key: str
+    cse_id: str
+
+    def __init__(self, api_key: str, cse_id: str) -> None:
         """Initialize with Google API credentials."""
         self.api_key = api_key
         self.cse_id = cse_id
-    
+
     def fetch_image_url(self, keyword: str) -> Optional[str]:
         """
         Fetch image URL for a keyword from Google Images.
@@ -26,8 +29,8 @@ class ImageFetcher:
         """
         try:
             logger.info(f"Hole Bild-URL für '{keyword}' von Google API")
-            gis = GoogleImagesSearch(self.api_key, self.cse_id)
-            search_query = keyword + " dish"
+            gis: GoogleImagesSearch = GoogleImagesSearch(self.api_key, self.cse_id)
+            search_query: str = keyword + " dish"
             logger.debug(f"Verwende Suchbegriff: '{search_query}'")
             gis.search({'q': search_query, 'num': 1})
 

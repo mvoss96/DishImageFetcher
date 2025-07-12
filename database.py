@@ -7,13 +7,16 @@ logger = logging.getLogger("database")
 class ImageCacheDB:
     """Database class for managing image cache with a persistent connection."""
 
-    def __init__(self, db_path: str):
+    db_path: str
+    conn: sqlite3.Connection
+
+    def __init__(self, db_path: str) -> None:
         self.db_path = db_path
         logger.info(f"Initialisiere Datenbankverbindung zu: {db_path}")
         self.conn = sqlite3.connect(self.db_path, timeout=30.0, check_same_thread=False)
         self.conn.execute("PRAGMA foreign_keys = ON")
         self.conn.execute("PRAGMA journal_mode = WAL")
-        cursor = self.conn.cursor()
+        cursor: sqlite3.Cursor = self.conn.cursor()
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS image_cache (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -35,9 +38,9 @@ class ImageCacheDB:
             return None
         try:
             logger.debug(f"Suche Cache für Keyword: '{keyword}'")
-            cursor = self.conn.cursor()
+            cursor: sqlite3.Cursor = self.conn.cursor()
             cursor.execute('SELECT image_url FROM image_cache WHERE keyword = ?', (keyword.lower(),))
-            result = cursor.fetchone()
+            result: Optional[tuple] = cursor.fetchone()
             if result:
                 logger.info(f"Cache-Treffer für Keyword: '{keyword}'")
                 return result[0]
@@ -55,7 +58,7 @@ class ImageCacheDB:
             return False
         try:
             logger.debug(f"Speichere in Cache - Keyword: '{keyword}', URL: {image_url}")
-            cursor = self.conn.cursor()
+            cursor: sqlite3.Cursor = self.conn.cursor()
             cursor.execute('''
                 INSERT OR REPLACE INTO image_cache (keyword, image_url) 
                 VALUES (?, ?)
@@ -70,7 +73,7 @@ class ImageCacheDB:
     def clear(self) -> bool:
         """Clear all cache entries. Returns True if successful."""
         try:
-            cursor = self.conn.cursor()
+            cursor: sqlite3.Cursor = self.conn.cursor()
             cursor.execute('DELETE FROM image_cache')
             self.conn.commit()
             logger.info("Cache erfolgreich geleert.")
@@ -79,7 +82,7 @@ class ImageCacheDB:
             logger.error(f"Fehler beim Leeren des Caches: {e}")
             return False
 
-    def close(self):
+    def close(self) -> None:
         """Close the database connection."""
         if self.conn:
             logger.info("Schließe Datenbankverbindung.")
