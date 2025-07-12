@@ -6,6 +6,17 @@ This project provides a FastAPI-based backend to fetch and cache image URLs for 
 - Caches image URLs in a local database
 - Fetches images using Google Custom Search API
 
+## Cache Logic
+The backend uses a local SQLite database to cache image URLs for dish keywords:
+
+- When you request an image for a keyword, the system first normalizes the keyword (see below) and checks if an image URL is already cached for it.
+- If a cached image URL exists, it is returned immediately.
+- If no cached image URL is found, the backend fetches a new image URL from Google Custom Search, stores it in the cache, and returns it.
+- All cache operations (read/write) are case-insensitive and use the normalized keyword.
+- The cache can be cleared programmatically via the backend (see code for details).
+
+This mechanism reduces API usage and speeds up repeated requests for the same dish name.
+
 ## Dev Container
 This project includes a `devcontainer.json` for easy setup in VS Code or compatible environments. The container installs all dependencies automatically and provides a ready-to-use Python development environment.
 
