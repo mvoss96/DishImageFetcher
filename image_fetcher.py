@@ -1,8 +1,10 @@
 """Google Images Search functionality for image URL retrieval."""
 
+import logging
 from google_images_search import GoogleImagesSearch
 from typing import Optional
 
+logger = logging.getLogger("image_fetcher")
 
 class ImageFetcher:
     """Class to handle Google Images search."""
@@ -23,16 +25,19 @@ class ImageFetcher:
             Image URL if found, None otherwise
         """
         try:
-            print(f"Fetching image URL for '{keyword}' from Google API")
+            logger.info(f"Hole Bild-URL für '{keyword}' von Google API")
             gis = GoogleImagesSearch(self.api_key, self.cse_id)
-            gis.search({'q': keyword + " dish", 'num': 1})
+            search_query = keyword + " dish"
+            logger.debug(f"Verwende Suchbegriff: '{search_query}'")
+            gis.search({'q': search_query, 'num': 1})
 
             for image in gis.results():
+                logger.info(f"Gefundene Bild-URL: {image.url}")
                 return image.url
 
-            print(f"No images found for '{keyword}'")
+            logger.warning(f"Keine Bilder gefunden für '{keyword}'")
             return None
 
         except Exception as e:
-            print(f"Error fetching image for '{keyword}': {e}")
+            logger.error(f"Fehler beim Abrufen des Bildes für '{keyword}': {e}")
             return None
