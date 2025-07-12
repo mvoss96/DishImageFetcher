@@ -54,5 +54,25 @@ Response:
 }
 ```
 
+## Input Normalization
+All keywords are normalized before searching:
+- Converts to lowercase
+- Removes accents and diacritics (e.g. "é" → "e")
+- Replaces German umlauts (e.g. "ä" → "ae")
+- Removes all characters except a-z and spaces
+- Reduces multiple spaces to a single space
+- Rejects empty, too short (<2), or too long (>100) normalized names with HTTP 422
+
+Example:
+- Input: `Crème brûlée`
+- Normalized: `creme brulee`
+
+If the normalized keyword is invalid, the API returns:
+```json
+{
+  "detail": "Normalized dish name is empty, too short, or too long."
+}
+```
+
 ## License
 MIT
