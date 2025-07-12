@@ -2,12 +2,12 @@ import logging
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, ValidationError, Field
-from typing import Optional
-from pydantic_settings import BaseSettings
 
 from database import ImageCacheDB
 from image_fetcher import ImageFetcher
+from models import ImageResponse
+from settings import Settings
+
 
 def init_logging():
     logging.basicConfig(
@@ -16,20 +16,6 @@ def init_logging():
         datefmt="%Y-%m-%d %H:%M:%S",
     )
     return logging.getLogger(__name__)
-
-class Settings(BaseSettings):
-    DB_PATH: str = Field(default="cache.db")
-    API_KEY: str = Field(default="")
-    CSE_ID: str = Field(default="")
-
-    class Config:
-        env_file = ".env"
-
-class ImageResponse(BaseModel):
-    """Response model for the /image endpoint."""
-    keyword: str
-    image_url: Optional[str]
-
 
 # App
 settings = Settings()
