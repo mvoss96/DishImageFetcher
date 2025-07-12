@@ -1,4 +1,4 @@
-google-images-search
-python-dotenv
 fastapi[standard]
 pydantic
+pydantic-settings
+google-images-search
