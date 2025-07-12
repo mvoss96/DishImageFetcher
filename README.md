@@ -73,6 +73,3 @@ If the normalized keyword is invalid, the API returns:
   "detail": "Normalized dish name is empty, too short, or too long."
 }
 ```
-
-## License
-MIT
