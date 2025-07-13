@@ -4,7 +4,7 @@ import logging
 from fastapi import APIRouter, HTTPException, Query
 
 from .models import ImageResponse
-from .text_utlis import normalize
+from .text_utils import normalize
 from .database import ImageCacheDB
 from .image_fetcher import ImageFetcher
 from .settings import Settings

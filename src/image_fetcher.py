@@ -28,19 +28,19 @@ class ImageFetcher:
             Image URL if found, None otherwise
         """
         try:
-            logger.info(f"Hole Bild-URL für '{keyword}' von Google API")
+            logger.info(f"Fetching image URL for '{keyword}' from Google API")
             gis: GoogleImagesSearch = GoogleImagesSearch(self.api_key, self.cse_id)
             search_query: str = keyword + " dish"
-            logger.debug(f"Verwende Suchbegriff: '{search_query}'")
+            logger.debug(f"Using search query: '{search_query}'")
             gis.search({'q': search_query, 'num': 1})
 
             for image in gis.results():
-                logger.info(f"Gefundene Bild-URL: {image.url}")
+                logger.info(f"Found image URL: {image.url}")
                 return image.url
 
-            logger.warning(f"Keine Bilder gefunden für '{keyword}'")
+            logger.warning(f"No images found for '{keyword}'")
             return None
 
         except Exception as e:
-            logger.error(f"Fehler beim Abrufen des Bildes für '{keyword}': {e}")
+            logger.error(f"Error fetching image for '{keyword}': {e}")
             return None
