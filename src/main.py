@@ -1,14 +1,11 @@
 import logging
-from typing import List
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from database import ImageCacheDB
-from image_fetcher import ImageFetcher
-from models import ImageResponse
-from settings import Settings
-from text_utlis import normalize
+from .database import ImageCacheDB
+from .settings import Settings
+from .routes import router as image_router
 
 def init_logging():
     logging.basicConfig(
@@ -19,47 +16,8 @@ def init_logging():
     return logging.getLogger(__name__)
 
 # App
-settings = Settings()
 logger = init_logging()
-db = ImageCacheDB(settings.DB_PATH)
-
-def _fetch_image_for_keyword(keyword: str) -> ImageResponse:
-    """
-    Helper function to fetch image for a single keyword.
-    Returns ImageResponse with image_url=None if no image is found or validation fails.
-    """
-    image_url = None
-    result_keyword = keyword
-    
-    try:
-        normalized = normalize(keyword)
-        if normalized and len(normalized) >= 2 and len(normalized) <= 100:
-            result_keyword = normalized
-            logger.info(f"Searching for keyword: '{keyword}' (normalized: '{normalized}')")
-            
-            cached_url = db.get_image_url(normalized)
-            if cached_url:
-                logger.info(f"Found cached image URL for '{normalized}'")
-                image_url = cached_url
-            else:
-                image_url = image_fetcher.fetch_image_url(normalized)
-                if image_url:
-                    if db.save_image_url(normalized, image_url):
-                        logger.info(f"Successfully cached image URL for '{normalized}'")
-                    else:
-                        logger.error(f"Failed to cache image URL for '{normalized}'")
-            
-            logger.info(f"Image URL for '{normalized}': {image_url}")
-        else:
-            logger.warning(f"Invalid keyword: '{keyword}' (normalized: '{normalized}')")
-            
-    except Exception as e:
-        logger.error(f"Error processing keyword '{keyword}': {str(e)}")
-    
-    return ImageResponse(keyword=result_keyword, image_url=image_url)
-
 app = FastAPI()
-image_fetcher = ImageFetcher(settings.API_KEY, settings.CSE_ID)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -68,28 +26,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-@app.get("/images", response_model=List[ImageResponse])
-def get_multiple_images(keyword: List[str] = Query(..., description="List of keywords to search for")):
-    """
-    Returns image URLs for multiple keywords at once. Gets images from cache or from Google Images.
-    Returns 400 if API key or CSE ID are missing.
-    Returns 422 if no keywords provided or too many keywords.
-    For individual keywords that fail, returns None as image_url but still includes them in results.
-    All keywords are normalized before processing.
-    """
-    if not keyword:
-        raise HTTPException(status_code=422, detail="At least one keyword must be provided.")
-    
-    if len(keyword) > 50:  # Limit to prevent abuse
-        raise HTTPException(status_code=422, detail="Too many keywords provided. Maximum 50 keywords allowed.")
-    
-    try:
-        # Normalize all keywords before processing
-        normalized_keywords = [normalize(kw) for kw in keyword]
-        results = [_fetch_image_for_keyword(kw) for kw in normalized_keywords]
-        return results
-    except Exception as e:
-        logger.error(f"Unexpected error in get_multiple_images: {str(e)}")
-        raise HTTPException(status_code=500, detail="Internal server error occurred while processing keywords.")
+# Importiere und füge die Routen hinzu
+app.include_router(image_router)
 
