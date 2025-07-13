@@ -1,13 +1,14 @@
 import logging
 import re
 import unicodedata
+from typing import List
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 
 from database import ImageCacheDB
 from image_fetcher import ImageFetcher
-from models import ImageResponse
+from models import ImageResponse, MultipleImageResponse
 from settings import Settings
 
 
@@ -46,6 +47,40 @@ def normalize(keyword: str) -> str:
 settings = Settings()
 logger = init_logging()
 db = ImageCacheDB(settings.DB_PATH)
+
+def _fetch_image_for_keyword(keyword: str) -> ImageResponse:
+    """
+    Helper function to fetch image for a single keyword.
+    Returns ImageResponse with image_url=None if no image is found or validation fails.
+    """
+    try:
+        normalized = normalize(keyword)
+        if not normalized or len(normalized) < 2 or len(normalized) > 100:
+            logger.warning(f"Invalid keyword: '{keyword}' (normalized: '{normalized}')")
+            return ImageResponse(keyword=keyword, image_url=None)
+        
+        logger.info(f"Searching for keyword: '{keyword}' (normalized: '{normalized}')")
+        cached_url = db.get_image_url(normalized)
+        image_url = None
+        
+        if cached_url:
+            logger.info(f"Found cached image URL for '{normalized}'")
+            image_url = cached_url
+        else:
+            image_url = image_fetcher.fetch_image_url(normalized)
+            if image_url:
+                if db.save_image_url(normalized, image_url):
+                    logger.info(f"Successfully cached image URL for '{normalized}'")
+                else:
+                    logger.error(f"Failed to cache image URL for '{normalized}'")
+        
+        logger.info(f"Image URL for '{normalized}': {image_url}")
+        return ImageResponse(keyword=normalized, image_url=image_url)
+        
+    except Exception as e:
+        logger.error(f"Error processing keyword '{keyword}': {str(e)}")
+        return ImageResponse(keyword=keyword, image_url=None)
+
 app = FastAPI()
 image_fetcher = ImageFetcher(settings.API_KEY, settings.CSE_ID)
 app.add_middleware(
@@ -56,31 +91,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.get("/image", response_model=ImageResponse)
-def get_image(keyword: str):
+
+@app.get("/images", response_model=MultipleImageResponse)
+def get_multiple_images(keyword: List[str] = Query(..., description="List of keywords to search for")):
     """
-    Returns the image URL for the given keyword. Gets the image from cache or from Google Images.
-    Returns 400 if API key or CSE ID are missing.
-    Returns 404 if no image is found.
-    Returns 422 if normalized keyword is empty, too short, or too long.
+    Returns image URLs for multiple keywords at once. Gets images from cache or from Google Images.
+    Returns 422 if no keywords provided or too many keywords.
+    For individual keywords that fail, returns None as image_url but still includes them in results.
+    All keywords are normalized before processing.
     """
-    normalized = normalize(keyword)
-    if not normalized or len(normalized) < 2 or len(normalized) > 100:
-        raise HTTPException(status_code=422, detail="Normalized dish name is empty, too short, or too long.")
-    logger.info(f"Searching for keyword: '{keyword}' (normalized: '{normalized}')")
-    cached_url = db.get_image_url(normalized)
-    image_url = None
-    if cached_url:
-        logger.info(f"Found cached image URL for '{normalized}'")
-        image_url = cached_url
-    else:
-        image_url = image_fetcher.fetch_image_url(normalized)
-        if image_url:
-            if db.save_image_url(normalized, image_url):
-                logger.info(f"Successfully cached image URL for '{normalized}'")
-            else:
-                logger.error(f"Failed to cache image URL for '{normalized}'")
-    logger.info(f"Image URL: {image_url}")
-    if not image_url:
-        raise HTTPException(status_code=404, detail="No image found for keyword")
-    return ImageResponse(keyword=normalized, image_url=image_url)
+    if not keyword:
+        raise HTTPException(status_code=422, detail="At least one keyword must be provided.")
+    
+    # Normalize all keywords before processing
+    normalized_keywords = [normalize(kw) for kw in keyword]
+    results = [_fetch_image_for_keyword(kw) for kw in normalized_keywords]
+    return MultipleImageResponse(results=results)
+
