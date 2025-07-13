@@ -53,33 +53,35 @@ def _fetch_image_for_keyword(keyword: str) -> ImageResponse:
     Helper function to fetch image for a single keyword.
     Returns ImageResponse with image_url=None if no image is found or validation fails.
     """
+    image_url = None
+    result_keyword = keyword
+    
     try:
         normalized = normalize(keyword)
-        if not normalized or len(normalized) < 2 or len(normalized) > 100:
-            logger.warning(f"Invalid keyword: '{keyword}' (normalized: '{normalized}')")
-            return ImageResponse(keyword=keyword, image_url=None)
-        
-        logger.info(f"Searching for keyword: '{keyword}' (normalized: '{normalized}')")
-        cached_url = db.get_image_url(normalized)
-        image_url = None
-        
-        if cached_url:
-            logger.info(f"Found cached image URL for '{normalized}'")
-            image_url = cached_url
+        if normalized and len(normalized) >= 2 and len(normalized) <= 100:
+            result_keyword = normalized
+            logger.info(f"Searching for keyword: '{keyword}' (normalized: '{normalized}')")
+            
+            cached_url = db.get_image_url(normalized)
+            if cached_url:
+                logger.info(f"Found cached image URL for '{normalized}'")
+                image_url = cached_url
+            else:
+                image_url = image_fetcher.fetch_image_url(normalized)
+                if image_url:
+                    if db.save_image_url(normalized, image_url):
+                        logger.info(f"Successfully cached image URL for '{normalized}'")
+                    else:
+                        logger.error(f"Failed to cache image URL for '{normalized}'")
+            
+            logger.info(f"Image URL for '{normalized}': {image_url}")
         else:
-            image_url = image_fetcher.fetch_image_url(normalized)
-            if image_url:
-                if db.save_image_url(normalized, image_url):
-                    logger.info(f"Successfully cached image URL for '{normalized}'")
-                else:
-                    logger.error(f"Failed to cache image URL for '{normalized}'")
-        
-        logger.info(f"Image URL for '{normalized}': {image_url}")
-        return ImageResponse(keyword=normalized, image_url=image_url)
-        
+            logger.warning(f"Invalid keyword: '{keyword}' (normalized: '{normalized}')")
+            
     except Exception as e:
         logger.error(f"Error processing keyword '{keyword}': {str(e)}")
-        return ImageResponse(keyword=keyword, image_url=None)
+    
+    return ImageResponse(keyword=result_keyword, image_url=image_url)
 
 app = FastAPI()
 image_fetcher = ImageFetcher(settings.API_KEY, settings.CSE_ID)
