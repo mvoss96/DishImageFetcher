@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from database import ImageCacheDB
 from image_fetcher import ImageFetcher
-from models import ImageResponse, MultipleImageResponse
+from models import ImageResponse
 from settings import Settings
 
 
@@ -92,10 +92,11 @@ app.add_middleware(
 )
 
 
-@app.get("/images", response_model=MultipleImageResponse)
+@app.get("/images", response_model=List[ImageResponse])
 def get_multiple_images(keyword: List[str] = Query(..., description="List of keywords to search for")):
     """
     Returns image URLs for multiple keywords at once. Gets images from cache or from Google Images.
+    Returns 400 if API key or CSE ID are missing.
     Returns 422 if no keywords provided or too many keywords.
     For individual keywords that fail, returns None as image_url but still includes them in results.
     All keywords are normalized before processing.
@@ -103,8 +104,15 @@ def get_multiple_images(keyword: List[str] = Query(..., description="List of key
     if not keyword:
         raise HTTPException(status_code=422, detail="At least one keyword must be provided.")
     
-    # Normalize all keywords before processing
-    normalized_keywords = [normalize(kw) for kw in keyword]
-    results = [_fetch_image_for_keyword(kw) for kw in normalized_keywords]
-    return MultipleImageResponse(results=results)
+    if len(keyword) > 50:  # Limit to prevent abuse
+        raise HTTPException(status_code=422, detail="Too many keywords provided. Maximum 50 keywords allowed.")
+    
+    try:
+        # Normalize all keywords before processing
+        normalized_keywords = [normalize(kw) for kw in keyword]
+        results = [_fetch_image_for_keyword(kw) for kw in normalized_keywords]
+        return results
+    except Exception as e:
+        logger.error(f"Unexpected error in get_multiple_images: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal server error occurred while processing keywords.")
 
