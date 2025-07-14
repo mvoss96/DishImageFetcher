@@ -13,9 +13,11 @@ class ImageAnalyser:
     ai_question = """Extract menu items, descriptions and prices from this OCR text. Return only valid JSON in the following form:
     [{
         "name": "Grilled Chicken Caesar Salad",
+        "keyword": "chicken caesar salad",
         "description": "null",
         "price": "$12.99"
     }]
+    Keyword is the normalized keyword used to search for the image.
     Do not return anything else than valid JSON. Your response must start and end with brackets. Do not include duplicates.
     Ignore any text that is not a menu item, description or price. If you cannot extract any items, return an empty array.
     """
@@ -67,6 +69,7 @@ class ImageAnalyser:
 
         # Validate the response
         content = completion.choices[0].message.content
+        print(f"AI response: {content}")  # Debugging output
         menu_items = []
         if content is not None:
             json_string = repair_json(content)
@@ -112,6 +115,7 @@ class ImageAnalyser:
                 item["description"] = "null"
             valid.append({
                 "name": name,
+                "keyword": item.get("keyword", name),  # Use keyword if available, fallback to name
                 "description": item["description"],
                 "price": price
             })

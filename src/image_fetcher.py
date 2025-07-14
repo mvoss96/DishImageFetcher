@@ -30,7 +30,7 @@ class ImageFetcher:
         try:
             logger.info(f"Fetching image URL for '{keyword}' from Google API")
             gis: GoogleImagesSearch = GoogleImagesSearch(self.api_key, self.cse_id)
-            search_query: str = keyword + " dish"
+            search_query: str = keyword + " dish food"
             logger.debug(f"Using search query: '{search_query}'")
             gis.search({'q': search_query, 'num': 1})
 

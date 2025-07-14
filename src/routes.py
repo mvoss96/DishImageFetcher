@@ -97,13 +97,15 @@ async def upload_file(image: UploadFile = File(...)):
         result = image_analyser.analyse_image(content)
         logger.info(f"Analysis result: {result}")
 
+
         # Fetch image URLs for each menu item
         enhanced_result = []
         for item in result:
-            item_name = item.get("name", "")
-            if item_name:
-                # Fetch image URL using the existing _fetch_image_for_keyword function
-                image_response = _fetch_image_for_keyword(item_name)
+            # Use keyword from AI response for image fetching, fallback to name if no keyword
+            search_keyword = item.get("keyword", item.get("name", ""))
+            if search_keyword:
+                # Fetch image URL using the keyword from AI response
+                image_response = _fetch_image_for_keyword(search_keyword)
                 # Create enhanced item with image URL
                 enhanced_item = {
                     "name": item.get("name"),
@@ -112,9 +114,9 @@ async def upload_file(image: UploadFile = File(...)):
                     "image_url": image_response.image_url
                 }
                 enhanced_result.append(enhanced_item)
-                logger.info(f"Added image URL for '{item_name}': {image_response.image_url}")
+                logger.info(f"Added image URL for keyword '{search_keyword}' (dish: '{item.get('name')}'): {image_response.image_url}")
             else:
-                # If no name, add item without image URL
+                # If no keyword or name, add item without image URL
                 enhanced_item = {
                     "name": item.get("name"),
                     "description": item.get("description"),
