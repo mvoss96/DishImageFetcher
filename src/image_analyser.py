@@ -4,6 +4,7 @@ import pytesseract
 import logging
 import json
 from json_repair import repair_json
+from io import BytesIO
 
 logger = logging.getLogger("image_analyser")
 
@@ -23,26 +24,31 @@ class ImageAnalyser:
         self.ai_model = ai_model
         self.client = OpenAI(base_url=base_url, api_key=api_key)
 
-    def analyse_image(self, image_path: str) -> list:
+    def analyse_image(self, image_input: str | bytes) -> list:
         """
         Analyzes an image to extract menu items using OCR and AI.
-        :param image_path: Path to the image file.
+        :param image_input: Either a file path (str) or image bytes (bytes).
         :return: List of menu items as dictionaries.
         """
-        logger.info(f"Reading image from {image_path}")
-        text = self.ocr_image(image_path)
-        logger.debug(f"Extracted text: {text}")
+        logger.info("Reading image")
+        text = self.ocr_image(image_input)
+        logger.info(f"Extracted text: {text}")
         return self.parse_text_ai(text)
 
-    def ocr_image(self, image_path: str) -> str:
+    def ocr_image(self, image_input: str | bytes) -> str:
         """
         Reads an image and extracts text using OCR.
-        :param image_path: Path to the image file.
+        :param image_input: Either a file path (str) or image bytes (bytes).
         :return: Extracted text from the image.
         """
-        image = Image.open(image_path)
+        if isinstance(image_input, str):
+            image = Image.open(image_input)
+        elif isinstance(image_input, bytes):
+            image = Image.open(BytesIO(image_input))
+        else:
+            raise ValueError("image_input must be either a file path (str) or image bytes (bytes)")
+        
         return pytesseract.image_to_string(image, config=self.custom_config)
-
 
     def parse_text_ai(self, text: str) -> list:
         """

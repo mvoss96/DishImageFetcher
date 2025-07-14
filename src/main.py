@@ -2,9 +2,8 @@ import logging
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
-from .database import ImageCacheDB
-from .settings import Settings
 from .routes import router as image_router
 
 def init_logging():
@@ -28,4 +27,7 @@ app.add_middleware(
 
 # Importiere und füge die Routen hinzu
 app.include_router(image_router)
+
+# Serviere statische Dateien auf Root-Ebene
+app.mount("/", StaticFiles(directory="src/static", html=True), name="static")
 
