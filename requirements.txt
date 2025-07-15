@@ -2,3 +2,6 @@ fastapi[standard]
 pydantic
 pydantic-settings
 google-images-search
+openai
+json_repair
+pytesseract
